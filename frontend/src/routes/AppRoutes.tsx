@@ -11,6 +11,7 @@ import { ItineraryBuilderPage } from "../pages/ItineraryBuilderPage";
 import { ItineraryViewPage } from "../pages/ItineraryViewPage";
 import { LoginPage } from "../pages/LoginPage";
 import { MyTripsPage } from "../pages/MyTripsPage";
+import { TripDetailsPage } from "../pages/TripDetailsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { SharedTripPage } from "../pages/SharedTripPage";
@@ -32,6 +33,7 @@ export const AppRoutes = () => (
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/trips" element={<MyTripsPage />} />
         <Route path="/trips/new" element={<CreateTripPage />} />
+        <Route path="/trips/:tripId" element={<TripDetailsPage />} />
         <Route path="/trips/:tripId/builder" element={<ItineraryBuilderPage />} />
         <Route path="/trips/:tripId/cities" element={<CitySearchPage />} />
         <Route path="/trips/:tripId/activities" element={<ActivitySearchPage />} />
