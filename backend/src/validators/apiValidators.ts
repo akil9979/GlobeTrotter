@@ -122,7 +122,7 @@ export const validateSearchQuery = (request: Request): void => {
 
 export const validateActivitySearchQuery = (request: Request): void => {
   for (const field of ["q", "search", "category"]) if (request.query[field] !== undefined && typeof request.query[field] !== "string") throw new HttpError(`${field} must be a string.`, 400);
-  if (request.query.city !== undefined) requireUuid(request.query.city, "city");
+  if (request.query.city !== undefined && typeof request.query.city !== "string") throw new HttpError("city must be a string.", 400);
   if (request.query.limit !== undefined && (!/^\d+$/.test(String(request.query.limit)) || Number(request.query.limit) < 1 || Number(request.query.limit) > 100)) throw new HttpError("limit must be an integer between 1 and 100.", 400);
   for (const field of ["minCost", "maxCost", "minDuration", "maxDuration"]) if (request.query[field] !== undefined && (!Number.isFinite(Number(request.query[field])) || Number(request.query[field]) < 0)) throw new HttpError(`${field} must be a non-negative number.`, 400);
   if (request.query.minCost !== undefined && request.query.maxCost !== undefined && Number(request.query.minCost) > Number(request.query.maxCost)) throw new HttpError("minCost cannot exceed maxCost.", 400);

@@ -19,6 +19,7 @@ import { savedDestinationRouter } from "./routes/savedDestinationRoutes.js";
 import { aiOptimizerRouter } from "./routes/aiOptimizerRoutes.js";
 import { budgetOptimizerRouter } from "./routes/budgetOptimizerRoutes.js";
 import { schedulingIntelligenceRouter } from "./routes/schedulingIntelligenceRoutes.js";
+import { destinationPlacesRouter } from "./routes/destinationPlacesRoutes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -47,6 +48,7 @@ app.use(healthRouter);
 app.use("/api", cityRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/saved-destinations", savedDestinationRouter);
+app.use("/api/destinations", destinationPlacesRouter);
 app.use("/api/activities", activityRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/trips", tripRouter);

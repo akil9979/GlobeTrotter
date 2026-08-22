@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/Button";
 import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
+import { SearchAutocomplete } from "../components/SearchAutocomplete";
 
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
@@ -76,6 +77,14 @@ export const AppLayout: React.FC = () => {
                 <span>Settings</span>
               </NavLink>
             </nav>
+          </div>
+
+          {/* Quick Search */}
+          <div className="hidden lg:block w-64">
+            <SearchAutocomplete
+              placeholder="Search (e.g. tok)..."
+              onSelectCity={(city) => navigate(`/cities?search=${encodeURIComponent(city.name)}`)}
+            />
           </div>
 
           <div className="flex items-center gap-3">

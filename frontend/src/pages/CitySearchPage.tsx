@@ -5,7 +5,8 @@ import { ErrorState } from "../components/ErrorState";
 import { Skeleton } from "../components/Skeleton";
 import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
-import { MapPin, Search, Plus, ArrowLeft, Building } from "lucide-react";
+import { SearchAutocomplete, CityResult } from "../components/SearchAutocomplete";
+import { MapPin, Plus, ArrowLeft, Building } from "lucide-react";
 
 type City = {
   id: string;
@@ -25,7 +26,7 @@ export const CitySearchPage = () => {
   const loadCities = () => {
     setIsLoading(true);
     setError(null);
-    apiClient<{ cities: City[] }>(`/cities?search=${encodeURIComponent(searchQuery)}&limit=20`)
+    apiClient<{ cities: City[] }>(`/cities?search=${encodeURIComponent(searchQuery)}&limit=30`)
       .then((res) => setCities(res.cities))
       .catch((err: Error) => setError(err.message))
       .finally(() => setIsLoading(false));
@@ -33,12 +34,16 @@ export const CitySearchPage = () => {
 
   useEffect(loadCities, [searchQuery]);
 
+  const handleSelectCity = (selected: CityResult) => {
+    setSearchQuery(selected.name);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <Link
-          to={`/trips/${tripId}`}
+          to={tripId ? `/trips/${tripId}` : "/trips"}
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-3"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -47,35 +52,33 @@ export const CitySearchPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-sky-700">
-              City Directory
+              Real-time City Directory
             </span>
             <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
               Explore Destinations
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Discover cities to add to your trip route and itinerary.
+              Type any city (e.g. <span className="font-bold text-sky-700">tok</span> for Tokyo, <span className="font-bold text-sky-700">rom</span> for Rome) to get instant backend suggestions.
             </p>
           </div>
 
-          <Link to={`/trips/${tripId}/builder`}>
-            <Button variant="primary" size="md" leftIcon={<Building className="h-4 w-4" />}>
-              Open Itinerary Builder
-            </Button>
-          </Link>
+          {tripId && (
+            <Link to={`/trips/${tripId}/builder`}>
+              <Button variant="primary" size="md" leftIcon={<Building className="h-4 w-4" />}>
+                Open Itinerary Builder
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="relative max-w-md">
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-          <Search className="h-4 w-4" />
-        </div>
-        <input
-          type="text"
-          placeholder="Search cities or countries..."
+      {/* Realtime Search Component */}
+      <div className="max-w-xl">
+        <SearchAutocomplete
+          placeholder="Type to search destinations in real-time (e.g. tok, rom, lon, par)..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3 py-2.5 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all shadow-subtle"
+          onSearchChange={setSearchQuery}
+          onSelectCity={handleSelectCity}
         />
       </div>
 
@@ -88,6 +91,12 @@ export const CitySearchPage = () => {
             <Skeleton key={x} className="h-64 rounded-2xl" />
           ))}
         </div>
+      ) : cities.length === 0 ? (
+        <div className="py-12 text-center text-slate-500">
+          <MapPin className="mx-auto h-12 w-12 text-slate-300 mb-2" />
+          <p className="font-bold text-slate-700 text-lg">No matching destinations found</p>
+          <p className="text-sm text-slate-500">Try searching for another city, region, or country name.</p>
+        </div>
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {cities.map((city) => (
@@ -95,7 +104,7 @@ export const CitySearchPage = () => {
               key={city.id}
               className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-card transition-all duration-200 hover:border-sky-300 hover:shadow-floating"
             >
-              <div className="relative h-40 w-full overflow-hidden bg-slate-200">
+              <div className="relative h-44 w-full overflow-hidden bg-slate-200">
                 {city.image ? (
                   <img
                     src={city.image}
@@ -125,7 +134,7 @@ export const CitySearchPage = () => {
                 </div>
 
                 <div className="pt-3 border-t border-slate-100">
-                  <Link to={`/trips/${tripId}/builder`}>
+                  <Link to={tripId ? `/trips/${tripId}/builder` : "/trips/new"}>
                     <Button
                       variant="outline"
                       size="sm"

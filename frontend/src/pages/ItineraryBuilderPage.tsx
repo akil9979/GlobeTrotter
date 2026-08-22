@@ -9,6 +9,7 @@ import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
 import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 import { SchedulingHealthBanner } from "../features/itinerary/SchedulingHealthBanner";
+import { SearchAutocomplete } from "../components/SearchAutocomplete";
 import type { SchedulingIntelligenceResponse } from "../types/schedulingIntelligence";
 import {
   Compass,
@@ -84,18 +85,24 @@ type ScheduleInput = {
   customCost: number | null;
 };
 
-const formatMoney = (value: number | null) =>
-  new Intl.NumberFormat("en-US", {
+const formatMoney = (value: number | null) => {
+  if (value === null || value === undefined) return "₹0";
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency: "USD",
+    currency: "INR",
     maximumFractionDigits: 0,
-  }).format(value ?? 0);
+  }).format(value);
+};
 
 const formatDate = (value: string) =>
-  new Date(`${value}T00:00:00`).toLocaleDateString("en-US", {
+  new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
   });
+
+// Always returns a clean YYYY-MM-DD string regardless of whether the value is
+// a full ISO timestamp (2026-08-22T00:00:00.000Z) or already a date string.
+const toIsoDate = (value: string): string => value.slice(0, 10);
 
 export const ItineraryBuilderPage = () => {
   const { tripId } = useParams();
@@ -450,24 +457,10 @@ const StopSearch = ({
   saving: boolean;
   onAdd: (input: { cityId: string; arrivalDate: string; departureDate: string }) => void;
 }) => {
-  const [query, setQuery] = useState("");
-  const [cities, setCities] = useState<City[]>([]);
   const [selected, setSelected] = useState<City | null>(null);
   const [arrivalDate, setArrival] = useState(trip.startDate);
   const [departureDate, setDeparture] = useState(trip.endDate);
   const [message, setMessage] = useState<string | null>(null);
-
-  const search = async (event: FormEvent) => {
-    event.preventDefault();
-    try {
-      const response = await apiClient<{ cities: City[] }>(
-        `/cities?search=${encodeURIComponent(query)}&limit=8`
-      );
-      setCities(response.cities);
-    } catch (reason) {
-      setMessage(reason instanceof Error ? reason.message : "City search failed.");
-    }
-  };
 
   const add = () => {
     if (!selected) return setMessage("Choose a city first.");
@@ -476,8 +469,6 @@ const StopSearch = ({
     setMessage(null);
     onAdd({ cityId: selected.id, arrivalDate, departureDate });
     setSelected(null);
-    setCities([]);
-    setQuery("");
   };
 
   return (
@@ -487,49 +478,37 @@ const StopSearch = ({
       </span>
       <h2 className="font-bold text-slate-900 text-base">Find Destination City</h2>
 
-      <form onSubmit={search} className="flex gap-2">
-        <div className="relative flex-1">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-            <Search className="h-4 w-4" />
-          </div>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-xl border border-slate-300 bg-slate-50/50 pl-9 pr-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:bg-white focus:ring-2 focus:ring-sky-100"
-            placeholder="e.g. Paris, Tokyo, Rome"
-          />
-        </div>
-        <Button variant="secondary" size="sm" type="submit">
-          Search
-        </Button>
-      </form>
-
-      {cities.length > 0 && (
-        <div className="max-h-48 space-y-1 overflow-auto rounded-xl border border-slate-200 p-1">
-          {cities.map((city) => (
-            <button
-              key={city.id}
-              onClick={() => setSelected(city)}
-              className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
-                selected?.id === city.id
-                  ? "bg-sky-50 text-sky-900 font-bold"
-                  : "hover:bg-slate-50 text-slate-700"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span>{city.name}</span>
-                <span className="text-xs text-slate-400 font-normal">{city.country}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="relative">
+        <SearchAutocomplete
+          placeholder="Type to search (e.g. tok for Tokyo, par for Paris)..."
+          value={selected?.name || ""}
+          onSelectCity={(city) => {
+            setSelected({
+              id: city.id,
+              name: city.name,
+              country: city.country,
+              description: city.description ?? null,
+              image: city.image ?? null,
+            });
+            setMessage(null);
+          }}
+        />
+      </div>
 
       {selected && (
-        <div className="mt-4 space-y-3 border-t border-slate-100 pt-3">
-          <div className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Check className="h-4 w-4 text-emerald-600" />
-            <span>{selected.name}, {selected.country}</span>
+        <div className="mt-4 space-y-3 border-t border-slate-100 pt-3 animate-in fade-in-50">
+          <div className="flex items-center justify-between gap-2 text-sm font-bold text-slate-900 bg-sky-50/70 p-2.5 rounded-xl border border-sky-100">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-sky-600" />
+              <span>{selected.name}, {selected.country}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              Change
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -603,20 +582,29 @@ const StopPanel = ({
   const [editingStop, setEditingStop] = useState(false);
   const [catalog, setCatalog] = useState<CatalogActivity[]>([]);
   const [query, setQuery] = useState("");
+  const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<CatalogActivity | null>(null);
   const [editingActivity, setEditingActivity] = useState<ScheduledActivity | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const searchActivities = async (event: FormEvent) => {
+  // Auto-fetch activities for city with 250ms debounce
+  useEffect(() => {
+    setLoadingCatalog(true);
+    setLocalError(null);
+    const timer = setTimeout(() => {
+      const searchTerm = query.trim() || stop.city.name;
+      apiClient<{ activities: CatalogActivity[] }>(
+        `/activities?city=${encodeURIComponent(searchTerm)}&limit=12`
+      )
+        .then((res) => setCatalog(res.activities || []))
+        .catch((reason) => setLocalError(reason instanceof Error ? reason.message : "Activity search failed."))
+        .finally(() => setLoadingCatalog(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query, stop.city.name, stop.cityId]);
+
+  const searchActivities = (event: FormEvent) => {
     event.preventDefault();
-    try {
-      const result = await apiClient<{ activities: CatalogActivity[] }>(
-        `/activities?city=${stop.cityId}&q=${encodeURIComponent(query)}&limit=12`
-      );
-      setCatalog(result.activities);
-    } catch (reason) {
-      setLocalError(reason instanceof Error ? reason.message : "Activity search failed.");
-    }
   };
 
   return (
@@ -686,9 +674,43 @@ const StopPanel = ({
 
       {/* Activity Catalog Search */}
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card space-y-4">
-        <span className="text-xs font-bold uppercase tracking-wider text-sky-700">
-          Step 2 • Activities in {stop.city.name}
-        </span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-sky-700">
+              Step 2 • Activities in {stop.city.name}
+            </span>
+            <h3 className="text-lg font-extrabold text-slate-900">Real API Activities & Live Pricing</h3>
+          </div>
+
+          {catalog.length > 0 && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={saving}
+              leftIcon={<Sparkles className="h-3.5 w-3.5 text-sky-200" />}
+              onClick={async () => {
+                const timeSlots = ["09:30", "14:00", "18:30"];
+                const endSlots = ["12:00", "16:30", "21:00"];
+                const topItems = catalog.slice(0, 4);
+                for (let i = 0; i < topItems.length; i++) {
+                  const act = topItems[i];
+                  await onAddActivity({
+                    tripStopId: stop.id,
+                    activityId: act.id,
+                    activityDate: toIsoDate(stop.arrivalDate),
+                    startTime: timeSlots[i % timeSlots.length],
+                    endTime: endSlots[i % endSlots.length],
+                    customCost: act.estimatedCost ? Number(act.estimatedCost) : 500,
+                  });
+                }
+              }}
+              className="bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-bold shrink-0 shadow-sm"
+            >
+              ⚡ Auto-Add Top {Math.min(4, catalog.length)} API Activities
+            </Button>
+          )}
+        </div>
+
         <form onSubmit={searchActivities} className="flex gap-2">
           <div className="relative flex-1">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
@@ -706,28 +728,76 @@ const StopPanel = ({
           </Button>
         </form>
 
-        {catalog.length > 0 && (
+        {loadingCatalog ? (
+          <div className="p-4 text-center text-xs font-semibold text-sky-700 animate-pulse">
+            Fetching real-time API activities for {stop.city.name}...
+          </div>
+        ) : catalog.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {catalog.map((item) => (
-              <button
+              <div
                 key={item.id}
-                onClick={() => setSelectedActivity(item)}
-                className={`rounded-xl border p-3.5 text-left transition-all ${
+                className={`flex flex-col justify-between rounded-xl border p-3.5 transition-all ${
                   selectedActivity?.id === item.id
                     ? "border-sky-500 bg-sky-50/80 ring-2 ring-sky-100 shadow-sm"
                     : "border-slate-200 hover:border-sky-300 bg-white hover:shadow-subtle"
                 }`}
               >
-                <h4 className="font-bold text-slate-900 text-sm">{item.name}</h4>
-                <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
-                  <span>{item.durationMinutes ? `${item.durationMinutes} mins` : "Flexible"}</span>
-                  <span>•</span>
-                  <span className="font-semibold text-slate-700">{formatMoney(item.estimatedCost)}</span>
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="font-bold text-slate-900 text-sm">{item.name}</h4>
+                    <Badge variant="emerald" size="sm" className="shrink-0 font-bold">
+                      {formatMoney(item.estimatedCost)}
+                    </Badge>
+                  </div>
+
+                  {item.description && (
+                    <p className="mt-1 text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                      {item.description}
+                    </p>
+                  )}
+
+                  <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-slate-400" />
+                      {item.durationMinutes ? `${item.durationMinutes} mins` : "120 mins"}
+                    </span>
+                  </div>
                 </div>
-              </button>
+
+                <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-100">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedActivity(item)}
+                    className="flex-1 text-xs"
+                  >
+                    Custom Time
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    disabled={saving}
+                    onClick={() =>
+                      onAddActivity({
+                        tripStopId: stop.id,
+                        activityId: item.id,
+                        activityDate: toIsoDate(stop.arrivalDate),
+                        startTime: "10:00",
+                        endTime: "12:30",
+                        customCost: item.estimatedCost ? Number(item.estimatedCost) : 500,
+                      })
+                    }
+                    leftIcon={<Plus className="h-3.5 w-3.5" />}
+                    className="flex-1 text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold"
+                  >
+                    Quick Add
+                  </Button>
+                </div>
+              </div>
             ))}
           </div>
-        )}
+        ) : null}
 
         {selectedActivity && (
           <ActivityForm
@@ -919,7 +989,7 @@ const ActivityForm = ({
   onCancel: () => void;
   onSave: (input: ScheduleInput) => void;
 }) => {
-  const [activityDate, setDate] = useState(initial?.activityDate ?? stop.arrivalDate);
+  const [activityDate, setDate] = useState(toIsoDate(initial?.activityDate ?? stop.arrivalDate));
   const [startTime, setStart] = useState(initial?.startTime ?? "");
   const [endTime, setEnd] = useState(initial?.endTime ?? "");
   const [cost, setCost] = useState(
@@ -975,7 +1045,7 @@ const ActivityForm = ({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1">Custom Cost (USD)</label>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">Estimated Cost (INR ₹)</label>
           <input
             type="number"
             min="0"

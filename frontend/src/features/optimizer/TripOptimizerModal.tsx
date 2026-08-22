@@ -76,9 +76,9 @@ const POPULAR_CITIES = ["Paris", "Rome", "Tokyo", "Lisbon", "Barcelona", "London
 const formatMoney = (amount: number | null) =>
   amount === null
     ? "No limit"
-    : new Intl.NumberFormat("en-US", {
+    : new Intl.NumberFormat("en-IN", {
         style: "currency",
-        currency: "USD",
+        currency: "INR",
         maximumFractionDigits: 0,
       }).format(amount);
 

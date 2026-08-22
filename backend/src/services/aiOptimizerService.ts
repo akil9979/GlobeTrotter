@@ -125,9 +125,9 @@ const generateOptimizerPlan = (
       const slotsCount = isRelaxed ? 2 : 3;
 
       const timeSlots = [
-        { start: "09:30", end: "12:30", defaultName: `${cityObj.name} Landmark Tour`, cat: "sightseeing", cost: 25 },
-        { start: "14:00", end: "16:30", defaultName: `${cityObj.name} Cultural Discovery`, cat: "culture", cost: 20 },
-        { start: "18:30", end: "21:00", defaultName: `${cityObj.name} Gourmet Tasting`, cat: "food", cost: 45 },
+        { start: "09:30", end: "12:30", defaultName: `${cityObj.name} Landmark Tour`, cat: "sightseeing", cost: 500 },
+        { start: "14:00", end: "16:30", defaultName: `${cityObj.name} Cultural Discovery`, cat: "culture", cost: 300 },
+        { start: "18:30", end: "21:00", defaultName: `${cityObj.name} Gourmet Tasting`, cat: "food", cost: 800 },
       ];
 
       for (let s = 0; s < slotsCount; s++) {
@@ -141,7 +141,7 @@ const generateOptimizerPlan = (
           const catAct = catalogActivities[activityIndex % catalogActivities.length];
           activityIndex++;
           name = catAct.name;
-          cost = catAct.estimatedCost !== null ? Number(catAct.estimatedCost) : slot.cost;
+          cost = catAct.estimatedCost !== null && Number(catAct.estimatedCost) > 0 ? Number(catAct.estimatedCost) : slot.cost;
           category = catAct.category;
           description = catAct.description ?? description;
         } else if (input.interests && input.interests.length > 0) {
@@ -171,16 +171,16 @@ const generateOptimizerPlan = (
     });
   }
 
-  // Budget calculations
+  // Budget calculations in INR
   const isBudgetFriendly = input.travelStyle?.toLowerCase() === "budget-friendly";
   const isLuxury = input.travelStyle?.toLowerCase() === "luxury";
 
-  const dailyTransportRate = isBudgetFriendly ? 15 : isLuxury ? 75 : 35;
-  const dailyAccommodationRate = isBudgetFriendly ? 55 : isLuxury ? 250 : 110;
-  const dailyMealsRate = isBudgetFriendly ? 30 : isLuxury ? 120 : 55;
-  const dailyOtherRate = isBudgetFriendly ? 10 : isLuxury ? 50 : 20;
+  const dailyTransportRate = isBudgetFriendly ? 500 : isLuxury ? 2500 : 1200;
+  const dailyAccommodationRate = isBudgetFriendly ? 1500 : isLuxury ? 12000 : 4000;
+  const dailyMealsRate = isBudgetFriendly ? 800 : isLuxury ? 5000 : 2000;
+  const dailyOtherRate = isBudgetFriendly ? 300 : isLuxury ? 2000 : 800;
 
-  const transport = Math.round(dailyTransportRate * totalDays + (numCities > 1 ? (numCities - 1) * 70 : 0));
+  const transport = Math.round(dailyTransportRate * totalDays + (numCities > 1 ? (numCities - 1) * 1500 : 0));
   const accommodation = Math.round(dailyAccommodationRate * totalDays);
   const activitiesTotal = Math.round(totalActivityCost);
   const meals = Math.round(dailyMealsRate * totalDays);
