@@ -18,5 +18,6 @@ export const errorHandler: ErrorRequestHandler = (error: AppError, _req, res, _n
 
   res.status(statusCode).json({
     error: statusCode >= 500 ? "Internal server error" : error.message,
+    ...(error.details === undefined ? {} : { details: error.details }),
   });
 };

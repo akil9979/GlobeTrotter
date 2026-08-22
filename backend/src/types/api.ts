@@ -37,3 +37,23 @@ export type ExpenseInput = {
 };
 
 export type ReorderItem = { id: string; order: number };
+
+export type CitySearchParams = {
+  search: string;
+  country?: string;
+  region?: string;
+  minCostIndex?: number;
+  maxCostIndex?: number;
+  limit: number;
+};
+
+export type ActivitySearchParams = {
+  cityId?: string;
+  category?: string;
+  search: string;
+  minCost?: number;
+  maxCost?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  limit: number;
+};

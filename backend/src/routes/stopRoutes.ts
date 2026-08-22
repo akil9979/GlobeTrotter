@@ -11,5 +11,5 @@ stopRouter.use(authenticate, validate(requireParamUuid("tripId")));
 stopRouter.get("/", asyncHandler(listStops));
 stopRouter.post("/", validate(validateStopCreate), asyncHandler(addStop));
 stopRouter.patch("/reorder", validate(validateReorder), asyncHandler(reorderStops));
-stopRouter.patch("/:stopId", validate(requireParamUuid("stopId")), validate(validateStopUpdate), asyncHandler(updateStop));
+stopRouter.put("/:stopId", validate(requireParamUuid("stopId")), validate(validateStopUpdate), asyncHandler(updateStop));
 stopRouter.delete("/:stopId", validate(requireParamUuid("stopId")), asyncHandler(deleteStop));

@@ -10,6 +10,11 @@ import { stopRouter } from "./routes/stopRoutes.js";
 import { tripActivityRouter } from "./routes/tripActivityRoutes.js";
 import { expenseRouter } from "./routes/expenseRoutes.js";
 import { authRouter } from "./routes/authRoutes.js";
+import { dashboardRouter } from "./routes/dashboardRoutes.js";
+import { activityRouter } from "./routes/activityRoutes.js";
+import { budgetRouter } from "./routes/budgetRoutes.js";
+import { itineraryRouter } from "./routes/itineraryRoutes.js";
+import { publicShareRouter, tripShareRouter } from "./routes/shareRoutes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -37,10 +42,16 @@ app.use(express.json());
 app.use(healthRouter);
 app.use("/api", cityRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/activities", activityRouter);
+app.use("/api/dashboard", dashboardRouter);
 app.use("/api/trips", tripRouter);
 app.use("/api/trips/:tripId/stops", stopRouter);
 app.use("/api/trips/:tripId/activities", tripActivityRouter);
 app.use("/api/trips/:tripId/expenses", expenseRouter);
+app.use("/api/trips/:tripId/budget-summary", budgetRouter);
+app.use("/api/trips/:tripId/itinerary", itineraryRouter);
+app.use("/api/trips/:tripId/share", tripShareRouter);
+app.use("/api/shared", publicShareRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

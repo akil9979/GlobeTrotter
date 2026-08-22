@@ -1,10 +1,13 @@
 import { db } from "../config/db.js";
 import type { ReorderItem, StopInput } from "../types/api.js";
 
-const stopFields = "s.id, s.trip_id AS \"tripId\", s.city_id AS \"cityId\", c.name AS \"cityName\", c.country AS \"cityCountry\", s.stop_order AS \"stopOrder\", s.arrival_date AS \"arrivalDate\", s.departure_date AS \"departureDate\", s.notes, s.created_at AS \"createdAt\", s.updated_at AS \"updatedAt\"";
+const stopFields = "s.id, s.trip_id AS \"tripId\", s.city_id AS \"cityId\", jsonb_build_object('id', c.id, 'name', c.name, 'country', c.country, 'countryCode', c.country_code, 'region', c.region, 'image', c.image, 'costIndex', c.cost_index, 'latitude', c.latitude, 'longitude', c.longitude) AS city, s.stop_order AS \"stopOrder\", s.arrival_date AS \"arrivalDate\", s.departure_date AS \"departureDate\", s.notes, s.created_at AS \"createdAt\", s.updated_at AS \"updatedAt\"";
 const ownedTrip = "EXISTS (SELECT 1 FROM trips t WHERE t.id = s.trip_id AND t.user_id = $2)";
 
 export const stopRepository = {
+  async listByTrip(tripId: string) {
+    return (await db.query(`SELECT ${stopFields} FROM trip_stops s JOIN cities c ON c.id = s.city_id WHERE s.trip_id = $1 ORDER BY s.stop_order`, [tripId])).rows;
+  },
   async list(tripId: string, userId: string) {
     return (await db.query(`SELECT ${stopFields} FROM trip_stops s JOIN cities c ON c.id = s.city_id WHERE s.trip_id = $1 AND ${ownedTrip} ORDER BY s.stop_order`, [tripId, userId])).rows;
   },

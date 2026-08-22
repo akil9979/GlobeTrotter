@@ -12,6 +12,8 @@ const optionalNonNegativeNumber = (value: unknown, field: string): void => {
 const validateTimes = (input: Record<string, unknown>): void => {
   optionalString(input.startTime, "startTime");
   optionalString(input.endTime, "endTime");
+  if ((input.startTime === undefined) !== (input.endTime === undefined)) throw new HttpError("startTime and endTime must be provided together.", 400);
+  for (const field of ["startTime", "endTime"]) if (input[field] !== undefined && input[field] !== null && !/^\d{2}:\d{2}(:\d{2})?$/.test(String(input[field]))) throw new HttpError(`${field} must use HH:MM format.`, 400);
   if (typeof input.startTime === "string" && typeof input.endTime === "string" && input.endTime <= input.startTime) {
     throw new HttpError("endTime must be later than startTime.", 400);
   }
@@ -36,6 +38,12 @@ export const validateTripUpdate = (request: Request): void => {
   if (input.startDate !== undefined && input.endDate !== undefined && String(input.endDate) < String(input.startDate)) throw new HttpError("endDate cannot precede startDate.", 400);
   optionalString(input.description, "description"); optionalString(input.coverImage, "coverImage");
   optionalNonNegativeNumber(input.budget, "budget"); optionalBoolean(input.isPublic, "isPublic");
+};
+
+export const validateTripDetailQuery = (request: Request): void => {
+  if (request.query.includeStops !== undefined && request.query.includeStops !== "true" && request.query.includeStops !== "false") {
+    throw new HttpError("includeStops must be true or false.", 400);
+  }
 };
 
 export const validateStopCreate = (request: Request): void => {
@@ -106,8 +114,19 @@ export const validateReorder = (request: Request): void => {
 };
 
 export const validateSearchQuery = (request: Request): void => {
-  if (request.query.q !== undefined && typeof request.query.q !== "string") throw new HttpError("q must be a string.", 400);
+  for (const field of ["q", "search", "country", "region"]) if (request.query[field] !== undefined && typeof request.query[field] !== "string") throw new HttpError(`${field} must be a string.`, 400);
   if (request.query.limit !== undefined && (!/^\d+$/.test(String(request.query.limit)) || Number(request.query.limit) < 1 || Number(request.query.limit) > 100)) throw new HttpError("limit must be an integer between 1 and 100.", 400);
+  for (const field of ["minCostIndex", "maxCostIndex"]) if (request.query[field] !== undefined && (!Number.isFinite(Number(request.query[field])) || Number(request.query[field]) < 0)) throw new HttpError(`${field} must be a non-negative number.`, 400);
+  if (request.query.minCostIndex !== undefined && request.query.maxCostIndex !== undefined && Number(request.query.minCostIndex) > Number(request.query.maxCostIndex)) throw new HttpError("minCostIndex cannot exceed maxCostIndex.", 400);
+};
+
+export const validateActivitySearchQuery = (request: Request): void => {
+  for (const field of ["q", "search", "category"]) if (request.query[field] !== undefined && typeof request.query[field] !== "string") throw new HttpError(`${field} must be a string.`, 400);
+  if (request.query.city !== undefined) requireUuid(request.query.city, "city");
+  if (request.query.limit !== undefined && (!/^\d+$/.test(String(request.query.limit)) || Number(request.query.limit) < 1 || Number(request.query.limit) > 100)) throw new HttpError("limit must be an integer between 1 and 100.", 400);
+  for (const field of ["minCost", "maxCost", "minDuration", "maxDuration"]) if (request.query[field] !== undefined && (!Number.isFinite(Number(request.query[field])) || Number(request.query[field]) < 0)) throw new HttpError(`${field} must be a non-negative number.`, 400);
+  if (request.query.minCost !== undefined && request.query.maxCost !== undefined && Number(request.query.minCost) > Number(request.query.maxCost)) throw new HttpError("minCost cannot exceed maxCost.", 400);
+  if (request.query.minDuration !== undefined && request.query.maxDuration !== undefined && Number(request.query.minDuration) > Number(request.query.maxDuration)) throw new HttpError("minDuration cannot exceed maxDuration.", 400);
 };
 
 const validateEmail = (value: unknown): void => {
