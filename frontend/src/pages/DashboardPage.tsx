@@ -7,6 +7,7 @@ import { Skeleton, TripCardSkeleton } from "../components/Skeleton";
 import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
 import { useAuth } from "../hooks/useAuth";
+import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 import {
   Compass,
   Wallet,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Sparkles,
   ArrowRight,
+  Bot,
 } from "lucide-react";
 
 type Trip = {
@@ -133,6 +135,7 @@ export const DashboardPage = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const load = () => {
     setError(null);
@@ -177,14 +180,60 @@ export const DashboardPage = () => {
             </p>
           </div>
 
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <Button
+              variant="outline"
+              size="lg"
+              leftIcon={<Sparkles className="h-5 w-5 text-sky-300" />}
+              onClick={() => setOptimizerOpen(true)}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-bold backdrop-blur-md"
+            >
+              AI Optimizer
+            </Button>
+
+            <Button
+              variant="primary"
+              size="lg"
+              leftIcon={<PlusCircle className="h-5 w-5" />}
+              onClick={() => navigate("/trips/new")}
+              className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold focus:ring-sky-300 shadow-md"
+            >
+              Plan New Trip
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* AI Assistant Spotlight Banner */}
+      <section className="relative overflow-hidden rounded-3xl border border-sky-200/80 bg-gradient-to-r from-sky-50 via-indigo-50/60 to-purple-50/40 p-6 sm:p-7 shadow-subtle">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-sky-600 to-indigo-600 text-white shadow-md">
+              <Bot className="h-6 w-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h2 className="font-extrabold text-slate-900 text-lg sm:text-xl">
+                  AI-Assisted Trip Optimizer
+                </h2>
+                <Badge variant="indigo" size="sm">
+                  New
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
+                Generate structured, budget-optimized multi-city itineraries in seconds. Choose your preferred activity types, dates, and budget to get instant tailored recommendations.
+              </p>
+            </div>
+          </div>
+
           <Button
             variant="primary"
-            size="lg"
-            leftIcon={<PlusCircle className="h-5 w-5" />}
-            onClick={() => navigate("/trips/new")}
-            className="shrink-0 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold focus:ring-sky-300 shadow-md"
+            size="md"
+            leftIcon={<Sparkles className="h-4 w-4" />}
+            onClick={() => setOptimizerOpen(true)}
+            className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-md"
           >
-            Plan New Trip
+            Launch Optimizer
           </Button>
         </div>
       </section>
@@ -295,6 +344,12 @@ export const DashboardPage = () => {
           />
         )}
       </section>
+
+      {/* AI Trip Optimizer Modal */}
+      <TripOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+      />
     </div>
   );
 };

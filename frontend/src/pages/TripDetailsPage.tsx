@@ -6,6 +6,7 @@ import { ErrorState } from "../components/ErrorState";
 import { Skeleton } from "../components/Skeleton";
 import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
+import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 import {
   ArrowLeft,
   Calendar,
@@ -20,6 +21,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Building,
+  Bot,
 } from "lucide-react";
 
 type Stop = {
@@ -74,6 +76,7 @@ export const TripDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const load = () => {
     if (!tripId) return;
@@ -135,14 +138,26 @@ export const TripDetailsPage = () => {
           Back to My Trips
         </Link>
 
-        <Button
-          variant="outline"
-          size="sm"
-          leftIcon={copiedShare ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Share2 className="h-3.5 w-3.5" />}
-          onClick={copyShareLink}
-        >
-          {copiedShare ? "Link Copied!" : "Share Trip"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Sparkles className="h-3.5 w-3.5 text-sky-600" />}
+            onClick={() => setOptimizerOpen(true)}
+            className="bg-gradient-to-r from-sky-50 to-indigo-50 border-sky-200 text-sky-900 font-bold"
+          >
+            AI Optimizer
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={copiedShare ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Share2 className="h-3.5 w-3.5" />}
+            onClick={copyShareLink}
+          >
+            {copiedShare ? "Link Copied!" : "Share Trip"}
+          </Button>
+        </div>
       </div>
 
       {/* Hero Header Card */}
@@ -297,6 +312,22 @@ export const TripDetailsPage = () => {
           </Button>
         </Link>
       </section>
+
+      {/* AI Trip Optimizer Modal */}
+      <TripOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+        tripId={trip.id}
+        tripName={trip.name}
+        initialStartDate={trip.startDate}
+        initialEndDate={trip.endDate}
+        initialBudget={trip.budget}
+        initialDestination={trip.stops.map((s) => s.city.name).join(", ")}
+        onSuccess={() => {
+          setOptimizerOpen(false);
+          load();
+        }}
+      />
     </div>
   );
 };

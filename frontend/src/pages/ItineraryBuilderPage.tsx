@@ -7,6 +7,7 @@ import { Skeleton } from "../components/Skeleton";
 import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
+import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 import {
   Compass,
   MapPin,
@@ -22,6 +23,7 @@ import {
   ArrowLeft,
   Sparkles,
   Check,
+  Bot,
 } from "lucide-react";
 
 type City = {
@@ -103,6 +105,7 @@ export const ItineraryBuilderPage = () => {
   const [deletingStop, setDeletingStop] = useState<Stop | null>(null);
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const load = () => {
     if (!tripId) return;
@@ -225,13 +228,26 @@ export const ItineraryBuilderPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <Link
-          to={`/trips/${trip.id}`}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors mb-3"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Trip Overview
-        </Link>
+        <div className="flex items-center justify-between gap-4 mb-3">
+          <Link
+            to={`/trips/${trip.id}`}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Trip Overview
+          </Link>
+
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Sparkles className="h-3.5 w-3.5 text-sky-600" />}
+            onClick={() => setOptimizerOpen(true)}
+            className="bg-gradient-to-r from-sky-50 to-indigo-50 border-sky-200 text-sky-900 font-bold"
+          >
+            Optimize with AI
+          </Button>
+        </div>
+
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-sky-950 to-indigo-950 p-6 text-white shadow-floating sm:p-8">
           <div className="relative z-10 space-y-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-500/20 px-3 py-1 text-xs font-semibold text-sky-300 border border-sky-400/20">
@@ -389,6 +405,21 @@ export const ItineraryBuilderPage = () => {
         onConfirm={confirmDeleteActivity}
         isConfirming={saving}
         variant="danger"
+      />
+
+      {/* AI Trip Optimizer Modal */}
+      <TripOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+        tripId={trip.id}
+        tripName={trip.name}
+        initialStartDate={trip.startDate}
+        initialEndDate={trip.endDate}
+        initialDestination={trip.stops.map((s) => s.city.name).join(", ")}
+        onSuccess={() => {
+          setOptimizerOpen(false);
+          load();
+        }}
       />
     </div>
   );

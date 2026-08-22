@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { ApiError, apiClient } from "../api/client";
 import { Button } from "../components/Button";
 import { ErrorState } from "../components/ErrorState";
+import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 import {
   Compass,
   Calendar,
@@ -11,6 +12,7 @@ import {
   FileText,
   ArrowLeft,
   Sparkles,
+  Bot,
 } from "lucide-react";
 
 type TripResponse = { trip: { id: string } };
@@ -23,6 +25,7 @@ export const CreateTripPage = () => {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -103,6 +106,31 @@ export const CreateTripPage = () => {
             Define your travel dates and budget limit. You can add destinations and daily activities next.
           </p>
         </div>
+      </section>
+
+      {/* AI Assistant Banner */}
+      <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-sky-200 bg-gradient-to-r from-sky-50 via-indigo-50 to-purple-50 p-5 shadow-subtle">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-900 text-sky-400 shadow-sm">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Want AI to plan this trip for you?</h3>
+            <p className="text-xs text-slate-600">
+              Generate structured multi-city stops, activities, and budget estimates in one step.
+            </p>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          leftIcon={<Bot className="h-4 w-4" />}
+          onClick={() => setOptimizerOpen(true)}
+          className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white font-bold"
+        >
+          Plan with AI
+        </Button>
       </section>
 
       {/* Form Card */}
@@ -282,6 +310,12 @@ export const CreateTripPage = () => {
           </Button>
         </div>
       </form>
+
+      {/* AI Trip Optimizer Modal */}
+      <TripOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+      />
     </div>
   );
 };

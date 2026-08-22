@@ -1,15 +1,14 @@
 import { Pool } from "pg";
 
-const databaseUrl = process.env.DATABASE_URL;
-
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL must be set before the server starts.");
-}
+const databaseUrl =
+  process.env.DATABASE_URL || "postgres://postgres:postgres@localhost:5432/globetrotter";
 
 export const db = new Pool({
   connectionString: databaseUrl,
-  // Neon requires TLS connections. Credentials remain solely in DATABASE_URL.
-  ssl: { rejectUnauthorized: false },
+  // Neon requires TLS connections. Local postgres does not.
+  ssl: process.env.DATABASE_URL?.includes("neon.tech")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
 db.on("error", (error) => {

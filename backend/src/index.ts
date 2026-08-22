@@ -16,6 +16,7 @@ import { budgetRouter } from "./routes/budgetRoutes.js";
 import { itineraryRouter } from "./routes/itineraryRoutes.js";
 import { publicShareRouter, tripShareRouter } from "./routes/shareRoutes.js";
 import { savedDestinationRouter } from "./routes/savedDestinationRoutes.js";
+import { aiOptimizerRouter } from "./routes/aiOptimizerRoutes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -54,6 +55,7 @@ app.use("/api/trips/:tripId/budget-summary", budgetRouter);
 app.use("/api/trips/:tripId/itinerary", itineraryRouter);
 app.use("/api/trips/:tripId/share", tripShareRouter);
 app.use("/api/shared", publicShareRouter);
+app.use("/api/ai/optimizer", aiOptimizerRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

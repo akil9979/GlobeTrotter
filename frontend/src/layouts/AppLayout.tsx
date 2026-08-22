@@ -10,8 +10,10 @@ import {
   PlusCircle,
   Menu,
   X,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "../components/Button";
+import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
 
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
   `flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 ${
@@ -24,6 +26,7 @@ export const AppLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -77,6 +80,16 @@ export const AppLayout: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Sparkles className="h-4 w-4 text-sky-600" />}
+              onClick={() => setOptimizerOpen(true)}
+              className="hidden md:inline-flex bg-gradient-to-r from-sky-50 to-indigo-50 border-sky-200 text-sky-900 font-bold hover:bg-sky-100"
+            >
+              AI Optimizer
+            </Button>
+
+            <Button
               variant="primary"
               size="sm"
               leftIcon={<PlusCircle className="h-4 w-4" />}
@@ -120,6 +133,16 @@ export const AppLayout: React.FC = () => {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setOptimizerOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-xl bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 px-3.5 py-2.5 text-sm font-bold text-sky-900 shadow-sm"
+            >
+              <Sparkles className="h-4 w-4 text-sky-600" />
+              <span>AI Trip Optimizer</span>
+            </button>
             <NavLink
               to="/dashboard"
               className={navItemClass}
@@ -174,6 +197,12 @@ export const AppLayout: React.FC = () => {
           <span>Budget Aware • Visual • Organized</span>
         </div>
       </footer>
+
+      {/* AI Trip Optimizer Modal */}
+      <TripOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+      />
     </div>
   );
 };
