@@ -1,22 +1,324 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, NavLink } from "react-router-dom";
 import { apiClient } from "../api/client";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
+import { Skeleton } from "../components/Skeleton";
+import { Button } from "../components/Button";
+import { Badge } from "../components/Badge";
+import {
+  ArrowLeft,
+  Calendar,
+  Wallet,
+  Compass,
+  MapPin,
+  ListTodo,
+  Share2,
+  Check,
+  Plus,
+  Sparkles,
+  LayoutDashboard,
+  CalendarDays,
+  Building,
+} from "lucide-react";
 
-type Stop = { id: string; city: { name: string; country: string; image: string | null }; arrivalDate: string; departureDate: string };
-type Trip = { id: string; name: string; description: string | null; startDate: string; endDate: string; budget: number | null; coverImage: string | null; stops: Stop[]; estimatedExpenseTotal: number };
+type Stop = {
+  id: string;
+  city: { name: string; country: string; image: string | null };
+  arrivalDate: string;
+  departureDate: string;
+};
+
+type Trip = {
+  id: string;
+  name: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  budget: number | null;
+  coverImage: string | null;
+  stops: Stop[];
+  estimatedExpenseTotal: number;
+  shareToken?: string;
+};
+
 type ScheduledActivity = { id: string };
-const money = (amount: number | null) => new Intl.NumberFormat(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(amount ?? 0);
-const dateRange = (trip: Trip) => `${new Date(`${trip.startDate}T00:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })} – ${new Date(`${trip.endDate}T00:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`;
+
+const formatMoney = (amount: number | null) =>
+  amount === null
+    ? "No budget set"
+    : new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(amount);
+
+const formatDateRange = (trip: Trip) => {
+  const start = new Date(`${trip.startDate}T00:00:00`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  const end = new Date(`${trip.endDate}T00:00:00`).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  return `${start} – ${end}`;
+};
 
 export const TripDetailsPage = () => {
-  const { tripId } = useParams(); const [trip, setTrip] = useState<Trip | null>(null); const [activityCount, setActivityCount] = useState<number>(0); const [error, setError] = useState<string | null>(null);
-  const load = () => { if (!tripId) return; setError(null); Promise.all([apiClient<{ trip: Trip }>(`/trips/${tripId}?includeStops=true`), apiClient<{ scheduledActivities: ScheduledActivity[] }>(`/trips/${tripId}/activities`)]).then(([tripResponse, activityResponse]) => { setTrip(tripResponse.trip); setActivityCount(activityResponse.scheduledActivities.length); }).catch((reason: Error) => setError(reason.message)); };
+  const { tripId } = useParams();
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [activityCount, setActivityCount] = useState<number>(0);
+  const [error, setError] = useState<string | null>(null);
+  const [copiedShare, setCopiedShare] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = () => {
+    if (!tripId) return;
+    setError(null);
+    setIsLoading(true);
+    Promise.all([
+      apiClient<{ trip: Trip }>(`/trips/${tripId}?includeStops=true`),
+      apiClient<{ scheduledActivities: ScheduledActivity[] }>(`/trips/${tripId}/activities`),
+    ])
+      .then(([tripResponse, activityResponse]) => {
+        setTrip(tripResponse.trip);
+        setActivityCount(activityResponse.scheduledActivities.length);
+      })
+      .catch((reason: Error) => setError(reason.message))
+      .finally(() => setIsLoading(false));
+  };
+
   useEffect(load, [tripId]);
-  if (!trip && !error) return <div className="animate-pulse space-y-5"><div className="h-52 rounded-2xl bg-slate-200" /><div className="grid gap-4 sm:grid-cols-3">{[1, 2, 3].map((x) => <div key={x} className="h-28 rounded-2xl bg-slate-200" />)}</div></div>;
-  if (error) return <div className="space-y-4"><ErrorState message={error} /><button onClick={load} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Try again</button></div>;
-  const currentTrip = trip!;
-  return <div className="space-y-6"><section className="overflow-hidden rounded-2xl bg-slate-900 text-white"><div className="relative min-h-56 p-6 sm:p-8">{currentTrip.coverImage && <img src={currentTrip.coverImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-35" />}<div className="absolute inset-0 bg-slate-950/40" /><div className="relative"><Link to="/trips" className="text-sm font-semibold text-sky-200 hover:text-white">← All trips</Link><h1 className="mt-8 max-w-2xl font-serif text-4xl leading-tight">{currentTrip.name}</h1><p className="mt-3 text-sm text-slate-200">{dateRange(currentTrip)}</p>{currentTrip.description && <p className="mt-4 max-w-xl text-sm leading-6 text-slate-100">{currentTrip.description}</p>}</div></div></section><section className="grid gap-4 sm:grid-cols-3"><Metric label="Trip budget" value={currentTrip.budget === null ? "Not set" : money(currentTrip.budget)} /><Metric label="Estimated cost" value={money(currentTrip.estimatedExpenseTotal)} /><Metric label="Activities" value={String(activityCount)} /></section><section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-sm font-semibold uppercase tracking-wider text-sky-700">Route</p><h2 className="mt-1 text-xl font-bold text-slate-900">Cities on this trip</h2></div><Link to={`/trips/${currentTrip.id}/builder`} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-sky-300 hover:text-sky-700">Open itinerary</Link></div>{currentTrip.stops.length ? <div className="mt-5 grid gap-3 sm:grid-cols-2">{currentTrip.stops.map((stop) => <div key={stop.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"><div className="h-12 w-12 overflow-hidden rounded-lg bg-slate-200">{stop.city.image && <img src={stop.city.image} alt="" className="h-full w-full object-cover" />}</div><div><p className="font-semibold text-slate-800">{stop.city.name}</p><p className="text-sm text-slate-500">{stop.city.country}</p></div></div>)}</div> : <div className="mt-5"><EmptyState title="Your route is open" description="Add cities to begin shaping this trip." /></div>}</section><section className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-sky-100 bg-sky-50 p-5 sm:flex-row sm:items-center"><div><h2 className="font-bold text-slate-900">Ready to shape the itinerary?</h2><p className="mt-1 text-sm text-slate-600">Add destinations and choose activities when you are ready.</p></div><Link to={`/trips/${currentTrip.id}/builder`} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Open itinerary</Link></section></div>;
+
+  const copyShareLink = () => {
+    if (!trip) return;
+    const shareUrl = `${window.location.origin}/share/${trip.shareToken || trip.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedShare(true);
+    setTimeout(() => setCopiedShare(false), 2500);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-64 w-full rounded-3xl" />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !trip) return <ErrorState message={error || "Trip not found"} onRetry={load} />;
+
+  const subNavClass = ({ isActive }: { isActive: boolean }) =>
+    `inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition-all ${
+      isActive
+        ? "bg-slate-900 text-white shadow-subtle"
+        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+    }`;
+
+  return (
+    <div className="space-y-6">
+      {/* Top Breadcrumb & Share Controls */}
+      <div className="flex items-center justify-between gap-4">
+        <Link
+          to="/trips"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to My Trips
+        </Link>
+
+        <Button
+          variant="outline"
+          size="sm"
+          leftIcon={copiedShare ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Share2 className="h-3.5 w-3.5" />}
+          onClick={copyShareLink}
+        >
+          {copiedShare ? "Link Copied!" : "Share Trip"}
+        </Button>
+      </div>
+
+      {/* Hero Header Card */}
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white shadow-floating">
+        <div className="relative min-h-[220px] p-6 sm:p-8 flex flex-col justify-end">
+          {trip.coverImage && (
+            <img
+              src={trip.coverImage}
+              alt={trip.name}
+              className="absolute inset-0 h-full w-full object-cover opacity-40 transition-opacity"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-slate-950/20" />
+
+          <div className="relative z-10 space-y-2 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="sky" size="sm" className="bg-sky-500/20 text-sky-200 border-sky-400/30 backdrop-blur-sm">
+                <Calendar className="h-3 w-3 mr-1" />
+                {formatDateRange(trip)}
+              </Badge>
+              <Badge variant="emerald" size="sm" className="bg-emerald-500/20 text-emerald-200 border-emerald-400/30 backdrop-blur-sm">
+                {trip.stops.length} {trip.stops.length === 1 ? "City" : "Cities"}
+              </Badge>
+            </div>
+
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+              {trip.name}
+            </h1>
+
+            {trip.description && (
+              <p className="text-sm text-slate-200 leading-relaxed max-w-2xl pt-1">
+                {trip.description}
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Sub-Navigation Tabs */}
+      <div className="flex overflow-x-auto gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-2 shadow-card no-scrollbar">
+        <NavLink to={`/trips/${trip.id}`} end className={subNavClass}>
+          <LayoutDashboard className="h-4 w-4" />
+          <span>Overview</span>
+        </NavLink>
+        <NavLink to={`/trips/${trip.id}/builder`} className={subNavClass}>
+          <ListTodo className="h-4 w-4" />
+          <span>Itinerary Builder</span>
+        </NavLink>
+        <NavLink to={`/trips/${trip.id}/cities`} className={subNavClass}>
+          <Building className="h-4 w-4" />
+          <span>Cities</span>
+        </NavLink>
+        <NavLink to={`/trips/${trip.id}/activities`} className={subNavClass}>
+          <Compass className="h-4 w-4" />
+          <span>Activities</span>
+        </NavLink>
+        <NavLink to={`/trips/${trip.id}/budget`} className={subNavClass}>
+          <Wallet className="h-4 w-4" />
+          <span>Budget Tracker</span>
+        </NavLink>
+        <NavLink to={`/trips/${trip.id}/calendar`} className={subNavClass}>
+          <CalendarDays className="h-4 w-4" />
+          <span>Calendar</span>
+        </NavLink>
+      </div>
+
+      {/* Quick Metrics */}
+      <section className="grid gap-4 sm:grid-cols-3">
+        <MetricCard
+          label="Planned Budget"
+          value={trip.budget === null ? "No budget set" : formatMoney(trip.budget)}
+          icon={<Wallet className="h-5 w-5 text-emerald-600" />}
+          iconBg="bg-emerald-50"
+        />
+        <MetricCard
+          label="Estimated Expenses"
+          value={formatMoney(trip.estimatedExpenseTotal)}
+          icon={<Compass className="h-5 w-5 text-sky-600" />}
+          iconBg="bg-sky-50"
+        />
+        <MetricCard
+          label="Scheduled Activities"
+          value={String(activityCount)}
+          icon={<ListTodo className="h-5 w-5 text-indigo-600" />}
+          iconBg="bg-indigo-50"
+        />
+      </section>
+
+      {/* Cities / Route Section */}
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wider text-sky-700">
+              Destinations
+            </span>
+            <h2 className="text-xl font-bold text-slate-900">Cities on this Trip</h2>
+          </div>
+          <Link to={`/trips/${trip.id}/cities`}>
+            <Button variant="outline" size="sm" leftIcon={<Plus className="h-4 w-4" />}>
+              Add City
+            </Button>
+          </Link>
+        </div>
+
+        {trip.stops.length ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {trip.stops.map((stop) => (
+              <div
+                key={stop.id}
+                className="flex items-center gap-3.5 rounded-xl border border-slate-200/80 bg-slate-50/60 p-3.5"
+              >
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-slate-200 shadow-sm">
+                  {stop.city.image ? (
+                    <img src={stop.city.image} alt={stop.city.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-slate-400">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 truncate">{stop.city.name}</h3>
+                  <p className="text-xs text-slate-500 truncate">{stop.city.country}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No cities added to your route yet"
+            description="Explore destination cities to build your trip itinerary."
+            icon={<MapPin className="h-7 w-7 text-sky-600" />}
+            actionLabel="Explore Cities"
+            onAction={() => window.location.assign(`/trips/${trip.id}/cities`)}
+          />
+        )}
+      </section>
+
+      {/* Callout Card */}
+      <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 to-indigo-50/50 p-6 shadow-subtle">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-sky-800 font-bold">
+            <Sparkles className="h-4 w-4" /> Ready to build your daily timeline?
+          </div>
+          <p className="text-sm text-slate-600">
+            Organize activities day-by-day, set time slots, and monitor your costs.
+          </p>
+        </div>
+        <Link to={`/trips/${trip.id}/builder`} className="shrink-0">
+          <Button variant="primary" size="md">
+            Open Itinerary Builder
+          </Button>
+        </Link>
+      </section>
+    </div>
+  );
 };
-const Metric = ({ label, value }: { label: string; value: string }) => <article className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm font-medium text-slate-500">{label}</p><p className="mt-2 text-2xl font-bold text-slate-900">{value}</p></article>;
+
+const MetricCard = ({
+  label,
+  value,
+  icon,
+  iconBg,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  iconBg: string;
+}) => (
+  <article className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
+      {icon}
+    </div>
+    <div className="min-w-0">
+      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-extrabold text-slate-900 truncate">{value}</p>
+    </div>
+  </article>
+);

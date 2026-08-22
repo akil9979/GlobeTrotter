@@ -3,6 +3,30 @@
 @tailwind utilities;
 
 @layer base {
-  body { @apply min-h-screen bg-slate-50 text-slate-900 antialiased; }
-  button, input { font: inherit; }
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply min-h-screen bg-slate-50 text-slate-900 antialiased font-sans;
+  }
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
