@@ -8,6 +8,8 @@ import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
 import { TripOptimizerModal } from "../features/optimizer/TripOptimizerModal";
+import { SchedulingHealthBanner } from "../features/itinerary/SchedulingHealthBanner";
+import type { SchedulingIntelligenceResponse } from "../types/schedulingIntelligence";
 import {
   Compass,
   MapPin,
@@ -106,6 +108,7 @@ export const ItineraryBuilderPage = () => {
   const [deletingActivityId, setDeletingActivityId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [optimizerOpen, setOptimizerOpen] = useState(false);
+  const [intelligence, setIntelligence] = useState<SchedulingIntelligenceResponse | null>(null);
 
   const load = () => {
     if (!tripId) return;
@@ -114,10 +117,16 @@ export const ItineraryBuilderPage = () => {
     Promise.all([
       apiClient<{ trip: Trip }>(`/trips/${tripId}?includeStops=true`),
       apiClient<{ scheduledActivities: ScheduledActivity[] }>(`/trips/${tripId}/activities`),
+      apiClient<{ intelligence: SchedulingIntelligenceResponse }>(`/trips/${tripId}/scheduling-intelligence`).catch(
+        () => ({ intelligence: null })
+      ),
     ])
-      .then(([t, a]) => {
+      .then(([t, a, intel]) => {
         setTrip(t.trip);
         setActivities(a.scheduledActivities);
+        if (intel?.intelligence) {
+          setIntelligence(intel.intelligence);
+        }
         setActiveStopId((current) =>
           current && t.trip.stops.some((stop) => stop.id === current)
             ? current
@@ -264,6 +273,13 @@ export const ItineraryBuilderPage = () => {
       </div>
 
       {error && <ErrorState message={error} />}
+
+      {/* Scheduling Intelligence Health & Conflict Banner */}
+      <SchedulingHealthBanner
+        tripId={trip.id}
+        intelligence={intelligence}
+        onResolved={load}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[330px_minmax(0,1fr)]">
         {/* Left Column: Add & List City Stops */}

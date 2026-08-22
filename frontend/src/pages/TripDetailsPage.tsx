@@ -77,6 +77,7 @@ export const TripDetailsPage = () => {
   const [copiedShare, setCopiedShare] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [optimizerOpen, setOptimizerOpen] = useState(false);
+  const [issueCount, setIssueCount] = useState<number>(0);
 
   const load = () => {
     if (!tripId) return;
@@ -85,10 +86,18 @@ export const TripDetailsPage = () => {
     Promise.all([
       apiClient<{ trip: Trip }>(`/trips/${tripId}?includeStops=true`),
       apiClient<{ scheduledActivities: ScheduledActivity[] }>(`/trips/${tripId}/activities`),
+      apiClient<{ intelligence: { hasIssues: boolean; issues: unknown[] } }>(
+        `/trips/${tripId}/scheduling-intelligence`
+      ).catch(() => ({ intelligence: { hasIssues: false, issues: [] } })),
     ])
-      .then(([tripResponse, activityResponse]) => {
+      .then(([tripResponse, activityResponse, intelResponse]) => {
         setTrip(tripResponse.trip);
         setActivityCount(activityResponse.scheduledActivities.length);
+        if (intelResponse?.intelligence?.hasIssues) {
+          setIssueCount(intelResponse.intelligence.issues.length);
+        } else {
+          setIssueCount(0);
+        }
       })
       .catch((reason: Error) => setError(reason.message))
       .finally(() => setIsLoading(false));
@@ -245,6 +254,28 @@ export const TripDetailsPage = () => {
           iconBg="bg-indigo-50"
         />
       </section>
+
+      {/* Scheduling Intelligence Conflict Warning */}
+      {issueCount > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/90 p-5 text-amber-950 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-slate-900">
+                Scheduling Intelligence: {issueCount} potential conflict{issueCount === 1 ? "" : "s"} detected
+              </p>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Overlapping time slots, invalid intervals, or out-of-range dates need attention.
+              </p>
+            </div>
+          </div>
+          <Link to={`/trips/${trip.id}/builder`} className="shrink-0">
+            <Button variant="primary" size="sm" className="bg-amber-600 hover:bg-amber-700 font-bold text-white">
+              Review & Fix Conflicts
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Cities / Route Section */}
       <section className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card space-y-4">

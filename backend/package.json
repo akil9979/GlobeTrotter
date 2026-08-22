@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "migrate": "tsx src/scripts/migrate.ts",
     "seed": "tsx src/scripts/seed.ts",
-    "test:ai": "tsx src/tests/aiOptimizer.test.ts"
+    "test:ai": "tsx src/tests/aiOptimizer.test.ts",
+    "test:budget": "tsx src/tests/budgetOptimizer.test.ts",
+    "test:scheduling": "tsx src/tests/schedulingIntelligence.test.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",

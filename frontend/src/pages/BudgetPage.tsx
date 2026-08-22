@@ -7,6 +7,7 @@ import { LoadingState } from "../components/LoadingState";
 import { Button } from "../components/Button";
 import { Badge } from "../components/Badge";
 import { Modal } from "../components/Modal";
+import { BudgetOptimizerModal } from "../features/budget/BudgetOptimizerModal";
 import {
   Wallet,
   Plus,
@@ -19,9 +20,11 @@ import {
   Pencil,
   Trash2,
   TrendingUp,
+  TrendingDown,
   Receipt,
   Calendar,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 
 type Category = "transport" | "accommodation" | "activity" | "meal" | "other";
@@ -100,6 +103,7 @@ export const BudgetPage = () => {
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Expense | "new" | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [optimizerOpen, setOptimizerOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!tripId) {
@@ -179,15 +183,27 @@ export const BudgetPage = () => {
             </p>
           </div>
 
-          <Button
-            variant="primary"
-            size="md"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={() => setEditing("new")}
-            className="shrink-0 bg-white text-slate-950 hover:bg-slate-100 focus:ring-white font-bold shadow-md"
-          >
-            Record Expense
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Button
+              variant="outline"
+              size="md"
+              leftIcon={<TrendingDown className="h-4 w-4 text-emerald-300" />}
+              onClick={() => setOptimizerOpen(true)}
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20 font-bold backdrop-blur-md"
+            >
+              Optimize Budget
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={() => setEditing("new")}
+              className="bg-white text-slate-950 hover:bg-slate-100 focus:ring-white font-bold shadow-md"
+            >
+              Record Expense
+            </Button>
+          </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 rounded-2xl bg-white/10 p-4 text-xs sm:text-sm font-medium border border-white/10">
@@ -236,13 +252,26 @@ export const BudgetPage = () => {
       {summary.isOverBudget && (
         <div
           role="alert"
-          className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900 shadow-sm"
         >
-          <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
-          <span>
-            <b>Projected budget exceeded.</b> Your total committed trip cost is{" "}
-            {formatMoney(summary.overBudgetAmount)} above your planned budget limit.
-          </span>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-rose-900">Projected budget exceeded by {formatMoney(summary.overBudgetAmount)}.</p>
+              <p className="text-xs text-rose-700 mt-0.5">
+                Our budget optimizer can identify cost reduction opportunities across your accommodation, activities, meals, and transport.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<TrendingDown className="h-4 w-4" />}
+            onClick={() => setOptimizerOpen(true)}
+            className="shrink-0 bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-sm"
+          >
+            Find Savings Opportunities
+          </Button>
         </div>
       )}
 
@@ -419,6 +448,14 @@ export const BudgetPage = () => {
         onConfirm={confirmDeleteExpense}
         isConfirming={saving}
         variant="danger"
+      />
+
+      {/* Budget Optimizer Modal */}
+      <BudgetOptimizerModal
+        isOpen={optimizerOpen}
+        onClose={() => setOptimizerOpen(false)}
+        tripId={tripId!}
+        onSuccess={() => void load()}
       />
     </div>
   );
