@@ -148,3 +148,12 @@ export const validateLogin = (request: Request): void => {
   validateEmail(body(request).email);
   validatePassword(body(request).password);
 };
+
+export const validateUserUpdate = (request: Request): void => {
+  const input = body(request);
+  if (Object.keys(input).length === 0) throw new HttpError("At least one profile field is required.", 400);
+  if (input.name !== undefined) requireString(input.name, "name");
+  if (input.email !== undefined) validateEmail(input.email);
+  if (input.profileImage !== undefined && input.profileImage !== null) optionalString(input.profileImage, "profileImage");
+  if (input.language !== undefined && (typeof input.language !== "string" || !/^[a-z]{2,10}$/i.test(input.language))) throw new HttpError("language must be a valid language code.", 400);
+};

@@ -15,6 +15,7 @@ import { activityRouter } from "./routes/activityRoutes.js";
 import { budgetRouter } from "./routes/budgetRoutes.js";
 import { itineraryRouter } from "./routes/itineraryRoutes.js";
 import { publicShareRouter, tripShareRouter } from "./routes/shareRoutes.js";
+import { savedDestinationRouter } from "./routes/savedDestinationRoutes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -42,6 +43,7 @@ app.use(express.json());
 app.use(healthRouter);
 app.use("/api", cityRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/saved-destinations", savedDestinationRouter);
 app.use("/api/activities", activityRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/trips", tripRouter);

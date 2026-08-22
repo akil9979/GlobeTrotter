@@ -30,4 +30,19 @@ export const authService = {
     if (!user) throw new HttpError("Authenticated user no longer exists.", 401);
     return user;
   },
+  async updateCurrentUser(userId: string, input: { name?: string; email?: string; profileImage?: string | null; language?: string }) {
+    const update = { ...input };
+    if (update.name !== undefined) update.name = update.name.trim();
+    if (update.email !== undefined) {
+      update.email = update.email.trim().toLowerCase();
+      const existing = await userRepository.findByEmail(update.email);
+      if (existing && existing.id !== userId) throw new HttpError("An account with this email already exists.", 409);
+    }
+    const user = await userRepository.update(userId, update);
+    if (!user) throw new HttpError("Authenticated user no longer exists.", 401);
+    return user;
+  },
+  async removeCurrentUser(userId: string) {
+    if (!await userRepository.remove(userId)) throw new HttpError("Authenticated user no longer exists.", 401);
+  },
 };

@@ -21,7 +21,7 @@ import { PublicOnlyRoute } from "./PublicOnlyRoute";
 
 export const AppRoutes = () => (
   <Routes>
-    <Route path="/shared/:shareToken" element={<SharedTripPage />} />
+    <Route path="/share/:shareToken" element={<SharedTripPage />} />
     <Route element={<PublicOnlyRoute />}>
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />

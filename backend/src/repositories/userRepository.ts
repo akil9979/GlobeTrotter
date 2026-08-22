@@ -17,4 +17,17 @@ export const userRepository = {
     const result = await db.query<SafeUser>(`SELECT ${safeUserFields} FROM users WHERE id = $1`, [id]);
     return result.rows[0];
   },
+  async update(id: string, input: Partial<Pick<SafeUser, "name" | "email" | "profileImage" | "language">>): Promise<SafeUser | undefined> {
+    const columns: Record<string, string> = { name: "name", email: "email", profileImage: "profile_image", language: "language" };
+    const entries = Object.entries(input).filter(([, value]) => value !== undefined);
+    if (!entries.length) return this.findSafeById(id);
+    const values = entries.map(([, value]) => value);
+    const setClause = entries.map(([key], index) => `${columns[key]} = $${index + 1}`).join(", ");
+    const result = await db.query<SafeUser>(`UPDATE users SET ${setClause} WHERE id = $${values.length + 1} RETURNING ${safeUserFields}`, [...values, id]);
+    return result.rows[0];
+  },
+  async remove(id: string): Promise<boolean> {
+    const result = await db.query("DELETE FROM users WHERE id = $1 RETURNING id", [id]);
+    return result.rowCount === 1;
+  },
 };

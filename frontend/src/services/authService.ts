@@ -7,4 +7,7 @@ export const authService = {
   login: (input: LoginInput) =>
     apiClient<AuthResponse>("/auth/login", { method: "POST", body: JSON.stringify(input) }),
   getCurrentUser: async (): Promise<User> => (await apiClient<{ user: User }>("/auth/me")).user,
+  updateCurrentUser: async (input: Partial<Pick<User, "name" | "email" | "profileImage" | "language">>): Promise<User> =>
+    (await apiClient<{ user: User }>("/auth/me", { method: "PUT", body: JSON.stringify(input) })).user,
+  deleteCurrentUser: () => apiClient<void>("/auth/me", { method: "DELETE" }),
 };

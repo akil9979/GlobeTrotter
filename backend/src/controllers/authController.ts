@@ -14,3 +14,12 @@ export const login: RequestHandler = async (req, res) => {
 export const getCurrentUser: RequestHandler = async (req, res) => {
   res.json({ user: await authService.getCurrentUser(req.userId!) });
 };
+
+export const updateCurrentUser: RequestHandler = async (req, res) => {
+  res.json({ user: await authService.updateCurrentUser(req.userId!, req.body) });
+};
+
+export const deleteCurrentUser: RequestHandler = async (req, res) => {
+  await authService.removeCurrentUser(req.userId!);
+  res.status(204).send();
+};

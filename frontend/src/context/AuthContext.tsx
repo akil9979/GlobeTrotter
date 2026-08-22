@@ -10,6 +10,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (input: LoginInput) => Promise<void>;
   register: (input: RegistrationInput) => Promise<void>;
+  updateUser: (input: Partial<Pick<User, "name" | "email" | "profileImage" | "language">>) => Promise<void>;
   logout: () => void;
 }
 
@@ -37,6 +38,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     setSession(await authService.register(input));
   };
 
+  const updateUser = async (input: Partial<Pick<User, "name" | "email" | "profileImage" | "language">>): Promise<void> => {
+    setUser(await authService.updateCurrentUser(input));
+  };
+
   useEffect(() => {
     if (!localStorage.getItem(tokenKey)) {
       setIsLoading(false);
@@ -46,7 +51,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isLoading, isAuthenticated: user !== null, login, register, logout }),
+    () => ({ user, isLoading, isAuthenticated: user !== null, login, register, updateUser, logout }),
     [user, isLoading],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

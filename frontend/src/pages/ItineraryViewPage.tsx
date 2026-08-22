@@ -1,2 +1,3 @@
-import { PagePlaceholder } from "../components/PagePlaceholder";
-export const ItineraryViewPage = () => <PagePlaceholder title="Itinerary" />;
+import { ItineraryExperience } from "../features/itinerary/ItineraryExperience";
+
+export const ItineraryViewPage = () => <ItineraryExperience mode="timeline" />;
