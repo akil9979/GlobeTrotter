@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 const navItemClass = ({ isActive }: { isActive: boolean }) =>
@@ -6,11 +6,16 @@ const navItemClass = ({ isActive }: { isActive: boolean }) =>
 
 export const AppLayout = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    navigate("/login", { replace: true });
+  };
   return <div className="min-h-screen">
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link to="/dashboard" className="text-lg font-bold text-sky-700">GlobeTrotter</Link>
-        <div className="flex items-center gap-3 text-sm"><span className="text-slate-600">{user?.name}</span><button onClick={logout} className="text-slate-600 hover:text-slate-900">Log out</button></div>
+        <div className="flex items-center gap-3 text-sm"><span className="text-slate-600">{user?.name}</span><button onClick={handleLogout} className="text-slate-600 hover:text-slate-900">Log out</button></div>
       </div>
     </header>
     <div className="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[190px_1fr]">

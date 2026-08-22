@@ -6,6 +6,15 @@ export interface User {
   language: string;
 }
 
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface RegistrationInput extends LoginInput {
+  name: string;
+}
+
 export interface AuthResponse {
   user: User;
   token: string;
