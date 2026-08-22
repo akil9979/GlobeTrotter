@@ -1,0 +1,60 @@
+import "dotenv/config";
+import cors from "cors";
+import express from "express";
+import { closeDatabaseConnection } from "./config/db.js";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
+import { healthRouter } from "./routes/healthRoutes.js";
+import { tripRouter } from "./routes/tripRoutes.js";
+import { cityRouter } from "./routes/cityRoutes.js";
+import { stopRouter } from "./routes/stopRoutes.js";
+import { tripActivityRouter } from "./routes/tripActivityRoutes.js";
+import { expenseRouter } from "./routes/expenseRoutes.js";
+import { authRouter } from "./routes/authRoutes.js";
+
+const app = express();
+const port = Number(process.env.PORT ?? 5000);
+
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+]);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Requests without an Origin header (such as curl) are permitted for local development.
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin is not allowed by CORS."));
+    },
+  }),
+);
+app.use(express.json());
+
+app.use(healthRouter);
+app.use("/api", cityRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/trips", tripRouter);
+app.use("/api/trips/:tripId/stops", stopRouter);
+app.use("/api/trips/:tripId/activities", tripActivityRouter);
+app.use("/api/trips/:tripId/expenses", expenseRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const server = app.listen(port, () => {
+  console.log(`GlobeTrotter API listening on http://localhost:${port}`);
+});
+
+const shutDown = async (): Promise<void> => {
+  server.close(async () => {
+    await closeDatabaseConnection();
+    process.exit(0);
+  });
+};
+
+process.once("SIGINT", shutDown);
+process.once("SIGTERM", shutDown);
